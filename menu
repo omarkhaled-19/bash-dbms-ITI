@@ -29,7 +29,27 @@ function mainMenu
     esac
     
 }
-
+try=""
+function createdb
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Create Your Database"
+    printseparator
+    echo $try
+    read -p "Enter database name:" dbname
+    if [[ -d "$db_path/$dbname" ]]
+    then
+        try="Database '$dbname' already exists! TRY AGAIN"
+        createdb
+    else
+        mkdir "$db_path/$dbname"
+        echo "Database '$dbname' created SUCCEFULLY !"
+    fi
+    echo
+    read -p "Press Enter to return to menu..."
+    mainMenu
+}
 
 #START
 mainMenu
