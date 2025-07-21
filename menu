@@ -1,0 +1,55 @@
+#!/bin/bash
+
+db_path="./databaseSystem"
+mkdir -p "$db_path"
+width=$(tput cols)
+function printseparator {
+    echo
+    printf '%*s\n' "$width" '' | tr ' ' '='
+    echo
+}
+
+function mainMenu
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Welcome to Database Manegment System"
+    printseparator
+    echo "1) Create Database"
+    echo "2) List Databases"
+    echo "3) Connect to Database"
+    echo "4) Drop Database"
+    echo "5) Exit"
+
+    read -p "Choose an option: " choice
+
+    case $choice in
+        1)createdb ;;
+        *)echo invalid
+    esac
+    
+}
+try=""
+function createdb
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Create Your Database"
+    printseparator
+    echo $try
+    read -p "Enter database name:" dbname
+    if [[ -d "$db_path/$dbname" ]]
+    then
+        try="Database '$dbname' already exists! TRY AGAIN"
+        createdb
+    else
+        mkdir "$db_path/$dbname"
+        echo "Database '$dbname' created SUCCEFULLY !"
+    fi
+    echo
+    read -p "Press Enter to return to menu..."
+    mainMenu
+}
+
+#START
+mainMenu
