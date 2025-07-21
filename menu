@@ -47,7 +47,7 @@ function createdb
         echo "Database '$dbname' created SUCCEFULLY !"
     fi
     echo
-    read -p "Press Enter to return to menu..."
+    read -p "Press Enter to return to menu....."
     mainMenu
 }
 
