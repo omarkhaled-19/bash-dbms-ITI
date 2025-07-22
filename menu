@@ -26,6 +26,7 @@ function mainMenu
     case $choice in
         1)createdb ;;
         2)listdbs ;;
+        4)dropdb ;;
         *)echo invalid
     esac
     
@@ -56,6 +57,26 @@ function listdbs
     clear
     echo "Database:"
     ls "$db_path"
+    echo
+    read -p "Press Enter to return to menu....."
+    mainMenu
+}
+function dropdb
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Create Your Database"
+    printseparator
+    echo $try
+    read -p "Enter Database name to delete: " dbname
+    if [[ -d "$db_path/$dbname" ]]
+    then
+        rm -r "$db_path/$dbname"
+        echo "Database '$dbname' deleted SUCCEFULLY !"
+    else
+        try="Database not found.Try Again,Please?!"
+        dropdb
+    fi
     echo
     read -p "Press Enter to return to menu....."
     mainMenu
