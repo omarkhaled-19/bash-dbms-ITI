@@ -25,6 +25,7 @@ function mainMenu
 
     case $choice in
         1)createdb ;;
+        2)listdbs ;;
         *)echo invalid
     esac
     
@@ -46,6 +47,15 @@ function createdb
         mkdir "$db_path/$dbname"
         echo "Database '$dbname' created SUCCEFULLY !"
     fi
+    echo
+    read -p "Press Enter to return to menu....."
+    mainMenu
+}
+function listdbs
+{
+    clear
+    echo "Database:"
+    ls "$db_path"
     echo
     read -p "Press Enter to return to menu....."
     mainMenu
