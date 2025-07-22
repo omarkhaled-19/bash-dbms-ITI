@@ -26,8 +26,10 @@ function mainMenu
     case $choice in
         1)createdb ;;
         2)listdbs ;;
+        3)connectdb ;;
         4)dropdb ;;
-        *)echo invalid
+        5)exit ;;
+        *)echo "Invalid Option"; mainMenu ;;
     esac
     
 }
@@ -55,6 +57,9 @@ function createdb
 function listdbs
 {
     clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "List The Databases"
+    printseparator
     echo "Database:"
     ls "$db_path"
     echo
@@ -65,7 +70,7 @@ function dropdb
 {
     clear
     printseparator
-    printf "%*s%s\n" $(( $width/2 )) "Create Your Database"
+    printf "%*s%s\n" $(( $width/2 )) "Drop The Database"
     printseparator
     echo $try
     read -p "Enter Database name to delete: " dbname
@@ -76,6 +81,26 @@ function dropdb
     else
         try="Database not found.Try Again,Please?!"
         dropdb
+    fi
+    echo
+    read -p "Press Enter to return to menu....."
+    mainMenu
+}
+function connectdb
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Connect The Database"
+    printseparator
+    echo $try
+    read -p "Enter Database name to connect: " dbname
+    if [[ -d "$db_path/$dbname" ]]
+    then
+        cd "$db_path/$dbname"
+        echo "Database '$dbname' connected SUCCEFULLY !"
+    else
+        try="Database not found.Try Again,Please?!"
+        connectdb
     fi
     echo
     read -p "Press Enter to return to menu....."
