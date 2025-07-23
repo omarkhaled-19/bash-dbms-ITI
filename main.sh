@@ -1,7 +1,22 @@
 #! /usr/bin/bash
 
+#Define base directory, and database directory to always return to:
+function check_program_folder {
+
+if [[ -d "Databases" ]]
+then
+	cd Databases
+else
+	mkdir Databases
+	cd Databases
+fi	
+}
+check_program_folder
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DB_DIR="$BASE_DIR/Databases"
+
+
 #This is the welcome message at the start of the DB
-main_folder=$(basename $PWD)
 PS3="Select an option: "
 welcome_message="Greetings to the Bash DBMS.
 Choose one of the following options: "
@@ -53,21 +68,13 @@ select db_choice in "Create a Table" "List current Tables" "Drop a Table" "Inser
 done
 }
 
-function check_program_folder {
 
-if [[ -d "Databases" ]]
-then
-	cd Databases
-else
-	mkdir Databases
-	cd Databases
-fi	
-}
 function create_db {
 	read -p "Enter Database Name: " db_name
 	mkdir $db_name 
 }
 function list_db {
+
 	list=$(ls -d */ 2> /dev/null)
 	if [[ $list ]]
 	then
@@ -102,21 +109,25 @@ function drop_db {
 
 function main_menu {
 
-
 select choice in "Create a Database" "List current Databases" "Connect to a Database" "Drop a Database" "Exit"; do
 	case $choice in
 		"Create a Database")
 			create_db
+			main_menu
 			;;
 		"List current Databases")
 			list_db
+			main_menu
 			;;
 		"Connect to a Database")
 			connect_db
 			db_menu
+			cd $BASE_DIR
+			main_menu	
 			;;
 		"Drop a Database")
 			drop_db
+			main_menu
 			;;
 		"Exit")
 			exit
@@ -131,7 +142,7 @@ echo "The End"
 
 }
 
-check_program_folder
+
 main_menu
 
 
