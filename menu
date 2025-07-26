@@ -98,6 +98,7 @@ function connectdb
     then
         cd "$db_path/$dbname"
         echo "Database '$dbname' connected SUCCEFULLY !"
+        ./table_menu.sh "$db_path/$dbname"
     else
         try="Database not found.Try Again,Please?!"
         connectdb

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+width=$(tput cols)
+
+function printseparator {
+  echo
+  printf '%*s\n' "$width" '' | tr ' ' '='
+  echo
+}
+
+DB_PATH="$1"
+DB_NAME=$(basename "$DB_PATH")  # or: DB_NAME="${DB_PATH##*/}"
+
+# 'basename' gives you the last part of a file path — the actual file name.
+# DB_PATH##*/ = "the longest match (last match of '/') of anything followed by a slash, from the start">>>if DB_PATH#*/ = the shortest match (first match of '/')
+
+if [[ ! -d "$DB_PATH" ]]; then
+  echo "Database path '$DB_PATH' not found!"
+  exit 1
+fi
