@@ -8,6 +8,7 @@ function printseparator {
   echo
 }
 
+# Validate DB path
 DB_PATH="$1"
 DB_NAME=$(basename "$DB_PATH")  # or: DB_NAME="${DB_PATH##*/}"
 
@@ -18,3 +19,123 @@ if [[ ! -d "$DB_PATH" ]]; then
   echo "Database path '$DB_PATH' not found!"
   exit 1
 fi
+
+# GLOBAL flag
+try=""
+
+function createTable
+{
+  clear
+  printseparator
+  printf "%*s%s\n" $((width / 2)) " Creation Tables to DB: $DB_NAME"
+  printseparator
+
+  while true
+  do
+    echo "$try"
+    try=""
+    read -p "Enter table name: " table_name
+    table_file="$DB_PATH/$table_name"
+    meta_file="$table_file.meta"
+
+    if [[ -f "$table_file" || -f "$meta_file" ]]
+    then
+      try="Table already exists! Please try again!"
+    else
+      break
+    fi
+  done
+
+  read -p "Enter number of columns: " col_count
+
+  metadata=""
+  pk_set="false"
+  declare -A col_names_seen
+
+  reserved=("select" "from" "where" "insert" "delete" "update" "table")
+
+  for ((i = 1; i <= col_count; i++))
+  do
+    while true
+    do
+      clear
+      echo "$try"
+      try=""
+      read -p "Enter name of column $i: " col_name
+      col_name=$(echo "$col_name" | tr '[:upper:]' '[:lower:]' | xargs)
+
+      if [[ -z "$col_name" ]]
+      then
+        try="Column name cannot be empty.TRY AGAIN!"
+        continue
+      elif [[ "${col_names_seen[$col_name]}" == "1" ]]
+      then
+        try="Duplicate column name '$col_name'. Please choose another!"
+        continue
+      elif [[ " ${reserved[*]} " == *" $col_name "* ]]
+      then
+        echo "'$col_name' is a reserved SQL keyword. Please choose another."
+        continue
+      else
+        col_names_seen[$col_name]=1
+        break
+      fi
+    done
+
+    while true
+    do
+      echo "$try"
+      try=""
+      read -p "Enter type of $col_name [int/string]: " col_type
+      col_type=$(echo "$col_type" | tr '[:upper:]' '[:lower:]' | xargs)
+
+      if [[ "$col_type" == "int" || "$col_type" == "string" ]]
+      then
+        break
+      else
+        try="INVALID type. Please enter 'int' or 'string'."
+      fi
+    done
+
+    if [[ "$pk_set" == "false" ]]
+    then
+      while true
+      do
+        echo "$try"
+        try=""
+        read -p "Is $col_name a Primary Key? [yes/no]: " is_pk
+        is_pk=$(echo "$is_pk" | tr '[:upper:]' '[:lower:]' | xargs)
+
+        if [[ "$is_pk" =~ ^y(e|es|s)?$ ]]
+        then
+          pk_set="true"
+          col_def="$col_name:$col_type:PK"
+          break
+        elif [[ "$is_pk" =~ ^n(o)?$ ]]
+        then
+          col_def="$col_name:$col_type"
+          break
+        else
+          try="Please answer 'yes' or 'no'. Try again!"
+        fi
+      done
+    else
+      col_def="$col_name:$col_type"
+    fi
+
+    if [[ $i -eq $col_count ]]
+    then
+      metadata+="$col_def"
+    else
+      metadata+="$col_def|"
+    fi
+  done
+
+  echo "$metadata" > "$meta_file"
+
+  touch "$table_file"
+
+  echo "Table '$table_name' created successfully."
+  echo "Metadata: $metadata"
+}
+createTable
