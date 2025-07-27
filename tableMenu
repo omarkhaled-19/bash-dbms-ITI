@@ -138,4 +138,26 @@ function createTable
   echo "Table '$table_name' created successfully."
   echo "Metadata: $metadata"
 }
-createTable
+
+function insertIntoTable
+{
+  clear
+  printseparator
+  printf "%*s%s\n" $((width / 2)) " Insert Into Tables of DB: $DB_NAME"
+  printseparator
+
+  read -p "Enter table name to insert into: " table_name
+  table_file="$DB_PATH/$table_name"
+  meta_file="$DB_PATH/$table_name.meta"
+
+  if [[ ! -f "$table_file" || ! -f "$meta_file" ]]
+  then
+    echo "Table '$table_name' does not exist."
+    return
+  fi
+
+  IFS='|' read -ra columns < "$meta_file"
+
+
+
+}
