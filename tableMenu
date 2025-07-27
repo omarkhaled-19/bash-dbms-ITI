@@ -207,5 +207,5 @@ do
     *) echo "Invalid choice. Try again." ;;
   esac
 
-  read -p "Press Enter to continue..." dummy
+  read -p "Press Enter to continue..."
 done
