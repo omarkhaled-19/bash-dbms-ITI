@@ -247,6 +247,26 @@ function updateTable
     col_keys[$idx]="$key"
     [[ "$key" == "PK" ]] && pk_index=$idx
   done
+
+  read -p "Enter primary key value to identify the row: " pk_value
+  declare -i line_num=0
+  target_line=""
+  while IFS= read -r line
+  do
+    ((line_num++))
+    IFS='|' read -ra fields <<< "$line"
+    if [[ "${fields[$pk_index]}" == "$pk_value" ]]
+    then
+      target_line=$line_num
+      break
+    fi
+  done < "$table_file"
+
+  if [[ $target_line -eq 0 ]]
+  then
+    echo "No record with PK='$pk_value' found."
+    return
+  fi
 }
 while true
 do
