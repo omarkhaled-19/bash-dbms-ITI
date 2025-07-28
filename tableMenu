@@ -339,6 +339,15 @@ function updateTable
   echo "$old_row"
   echo "Row updated successfully:"
   echo "$new_row"
+
+  echo If you want another update ,Press 1
+  echo If you want Your database menu press Enter ..
+  read -p "Your choice >>" choice 
+  if [[ "$choice" == "1"  ]]
+  then
+    updateTable
+  else
+    continue
 }
 while true
 do
