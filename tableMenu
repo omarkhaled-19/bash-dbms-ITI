@@ -234,6 +234,19 @@ function updateTable
     echo "Table '$table_name' does not exist."
     return
   fi
+  
+  IFS='|' read -ra cols_meta < "$meta_file"
+  declare -a col_names col_types col_keys
+  pk_index=-1
+
+  for idx in "${!cols_meta[@]}"
+  do
+    IFS=':' read -r name type key <<< "${cols_meta[$idx]}"
+    col_names[$idx]="$name"
+    col_types[$idx]="$type"
+    col_keys[$idx]="$key"
+    [[ "$key" == "PK" ]] && pk_index=$idx
+  done
 }
 while true
 do
