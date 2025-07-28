@@ -294,6 +294,24 @@ function updateTable
       continue
     fi
   done
+
+  col_type="${col_types[$col_idx]}"
+  col_key="${col_keys[$col_idx]}"
+
+
+  while true
+  do
+    read -p "Enter new value for '$col_to_update' [$col_type]: " new_value
+
+    if [[ "$col_type" == "int" && ! "$new_value" =~ ^-?[0-9]+$ ]]
+    then
+      echo "Value must be an integer."
+      continue
+    elif [[ "$col_type" == "string" && "$new_value" =~ [\|\:] ]]
+    then
+      echo "Strings cannot contain '|' or ':'."
+      continue
+    fi
 }
 while true
 do
