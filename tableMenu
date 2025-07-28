@@ -312,6 +312,21 @@ function updateTable
       echo "Strings cannot contain '|' or ':'."
       continue
     fi
+
+    if [[ "$col_key" == "PK" ]]
+    then
+      pk_conflict=false
+      while IFS='|' read -ra row
+      do
+        [[ "${row[$col_idx]}" == "$new_value" ]] && pk_conflict=true && break
+      done < "$table_file"
+
+      if $pk_conflict
+      then
+        echo "Primary key '$new_value' already exists. Choose another."
+        continue
+      fi
+    fi
 }
 while true
 do
