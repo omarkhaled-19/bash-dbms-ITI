@@ -215,7 +215,7 @@ function insertIntoTable
 
   echo "$row" >> "$table_file"
   echo "Row inserted successfully: $row"
-
+ead -p "Enter column name to update: " col_to_update
 }
 
 function updateTable
@@ -230,7 +230,7 @@ function updateTable
   meta_file="$table_file.meta"
 
   if [[ ! -f "$table_file" || ! -f "$meta_file" ]]
-  then
+  thenead -p "Enter column name to update: " col_to_update
     echo "Table '$table_name' does not exist."
     return
   fi
@@ -369,9 +369,11 @@ do
   case $choice in
     1) createTable ;;
     2) echo "Tables in $DB_NAME:" && ls -1 "$DB_PATH" ;;
+    3) dropTable;;
     4) insertIntoTable ;;
+    5) selectFromTable;;
     *) echo "Invalid choice. Try again." ;;
   esac
 
-  read -p "Press Enter to continue..."
+  read -p "Press Enter to continue..." continue
 done
