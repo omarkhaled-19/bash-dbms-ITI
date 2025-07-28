@@ -178,8 +178,43 @@ function insertIntoTable
         echo "Strings cannot contain '|' or ':'."
         continue
       fi
+      
+      if [[ "$col_key" == "PK" ]]
+      then
+        pk_value="$value"
+        pk_col_index=$idx
+
+        pk_exists=false
+
+        while IFS='|' read -ra fields
+        do
+          if [[ "${fields[$pk_col_index]}" == "$pk_value" ]]
+          then
+            pk_exists=true
+            break
+          fi
+        done < "$table_file"
+
+        if $pk_exists
+        then
+          echo "Primary Key value '$pk_value' already exists in column $(($pk_col_index+1))."
+          continue
+        fi
+      fi
+
+      break
+    done
+
+    if [[ $idx -eq 0 ]]
+    then
+      row="$value"
+    else
+      row+="|$value"
+    fi
   done
 
+  echo "$row" >> "$table_file"
+  echo "Row inserted successfully: $row"
 
 }
 
