@@ -327,6 +327,18 @@ function updateTable
         continue
       fi
     fi
+
+    break
+  done
+
+  old_row=$(IFS='|'; echo "${fields[*]}")
+  fields[$col_idx]="$new_value"
+  new_row=$(IFS='|'; echo "${fields[*]}")
+  sed -i "${target_line}s/.*/$new_row/" "$table_file"
+  echo "The Row to update:"
+  echo "$old_row"
+  echo "Row updated successfully:"
+  echo "$new_row"
 }
 while true
 do
