@@ -276,6 +276,24 @@ function updateTable
   do
     echo "$((idx+1))). ${col_names[$idx]} = ${fields[$idx]}"
   done
+
+  while true
+  do
+    read -p "Enter column name to update: " col_to_update
+    col_to_update=$(echo "$col_to_update" | tr '[:upper:]' '[:lower:]')
+    col_idx=-1
+    for i in "${!col_names[@]}"
+    do
+      [[ "${col_names[$i]}" == "$col_to_update" ]] && col_idx=$i && break
+    done
+    if [[ $col_idx -ge 0 ]]
+    then
+      break
+    else
+      echo "Invalid column name. Try again."
+      continue
+    fi
+  done
 }
 while true
 do
