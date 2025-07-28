@@ -267,6 +267,15 @@ function updateTable
     echo "No record with PK='$pk_value' found."
     return
   fi
+
+  IFS='|' read -ra fields < <(sed -n "${target_line}p" "$table_file") #Process Substitution (Another subshell) ; like Pipline logic'|' in same shell but we can't use it
+  #IFS='|' read -ra fields <<< "$(sed -n "${target_line}p" "$table_file")" # Or Split in two line on script by take the output in a variable (subshell) and pass it to 'read Array Fields'(Main shell)
+
+  echo "Current record:"
+  for idx in "${!col_names[@]}"
+  do
+    echo "$((idx+1))). ${col_names[$idx]} = ${fields[$idx]}"
+  done
 }
 while true
 do
