@@ -218,6 +218,23 @@ function insertIntoTable
 
 }
 
+function updateTable
+{
+  clear
+  printseparator
+  printf "%*s%s\n" $((width / 2)) " Update Table in DB: $DB_NAME"
+  printseparator
+
+  read -p "Enter table name to update: " table_name
+  table_file="$DB_PATH/$table_name"
+  meta_file="$table_file.meta"
+
+  if [[ ! -f "$table_file" || ! -f "$meta_file" ]]
+  then
+    echo "Table '$table_name' does not exist."
+    return
+  fi
+}
 while true
 do
   clear
