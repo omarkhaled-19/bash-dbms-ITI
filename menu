@@ -7,14 +7,8 @@ then
 else
 	mkdir -p "$db_path"
 fi
-width=$(tput cols)
-function printseparator {
-    echo
-    printf '%*s\n' "$width" '' | tr ' ' '='
-    echo
-}
-reserved_names=("select" "from" "where" "insert" "delete" "update" "table" "database")
 
+reserved_names=("select" "from" "where" "insert" "delete" "update" "table" "database")
 function validate_name()
 {
   local name="$1"
@@ -44,57 +38,16 @@ function validate_name()
 
   return 0
 }
-function mainMenu
-{
-    clear
-    printseparator
-    printf "%*s%s\n" $(( $width/2 )) "Welcome to Database Manegment System"
-    printseparator
-    echo "1) Create Database"
-    echo "2) List Databases"
-    echo "3) Connect to Database"
-    echo "4) Drop Database"
-    echo "5) Exit"
 
-    read -p "Choose an option: " choice
-
-    case $choice in
-        1)createdb ;;
-        2)listdbs ;;
-        3)connectdb ;;
-        4)dropdb ;;
-        5)exit ;;
-        *)echo "Invalid Option"; mainMenu ;;
-    esac
-    
-}
-try=""
-function createdb
-{
-    clear
-    printseparator
-    printf "%*s%s\n" $(( $width/2 )) "Create Your Database"
-    printseparator
-    echo $try
-    read -p "Enter database name:" dbname
-    validate_name "$dbname" ||
-    {
-        read -p "Press Enter to retry..."
-        clear
-        createdb
-    }
-    if [[ -d "$db_path/$dbname" ]]
-    then
-        try="Database '$dbname' already exists! TRY AGAIN"
-        createdb
-    else
-        mkdir "$db_path/$dbname"
-        echo "Database '$dbname' created SUCCEFULLY !"
-    fi
+width=$(tput cols)
+function printseparator {
     echo
-    read -p "Press Enter to return to menu....."
-    mainMenu
+    printf '%*s\n' "$width" '' | tr ' ' '='
+    echo
 }
+
+try=""
+
 function listdbs
 {
     clear
@@ -109,6 +62,27 @@ function listdbs
      echo "No Databases created"
     fi
     echo 
+    read -p "Press Enter to return to menu....."
+    mainMenu
+}
+function connectdb
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Connect The Database"
+    printseparator
+    echo $try
+    read -p "Enter Database name to connect: " dbname
+    if [[ -d "$db_path/$dbname" && -n "$dbname" ]]
+    then
+        #cd "$db_path/$dbname"
+        echo "Database '$dbname' connected SUCCEFULLY !"
+        . ./tableMenu "$db_path/$dbname"
+    else
+        try="Database not found.Try Again,Please?!"
+        connectdb
+    fi
+    echo
     read -p "Press Enter to return to menu....."
     mainMenu
 }
@@ -144,27 +118,56 @@ function dropdb
     read -p "Press Enter to return to menu....."
     mainMenu
 }
-function connectdb
+
+function createdb
 {
     clear
     printseparator
-    printf "%*s%s\n" $(( $width/2 )) "Connect The Database"
+    printf "%*s%s\n" $(( $width/2 )) "Create Your Database"
     printseparator
     echo $try
-    read -p "Enter Database name to connect: " dbname
-    if [[ -d "$db_path/$dbname" && -n "$dbname" ]]
+    read -p "Enter database name:" dbname
+    validate_name "$dbname" ||
+    {
+        read -p "Press Enter to retry..."
+        clear
+        createdb
+    }
+    if [[ -d "$db_path/$dbname" ]]
     then
-        #cd "$db_path/$dbname"
-        echo "Database '$dbname' connected SUCCEFULLY !"
-        . ./tableMenu "$db_path/$dbname"
+        try="Database '$dbname' already exists! TRY AGAIN"
+        createdb
     else
-        try="Database not found.Try Again,Please?!"
-        connectdb
+        mkdir "$db_path/$dbname"
+        echo "Database '$dbname' created SUCCEFULLY !"
     fi
     echo
     read -p "Press Enter to return to menu....."
     mainMenu
 }
+function mainMenu
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Welcome to Database Manegment System"
+    printseparator
+    echo "1) Create Database"
+    echo "2) List Databases"
+    echo "3) Connect to Database"
+    echo "4) Drop Database"
+    echo "5) Exit"
 
+    read -p "Choose an option: " choice
+
+    case $choice in
+        1)createdb ;;
+        2)listdbs ;;
+        3)connectdb ;;
+        4)dropdb ;;
+        5)exit ;;
+        *)echo "Invalid Option"; mainMenu ;;
+    esac
+    
+}
 #START
 mainMenu

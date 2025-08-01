@@ -1,5 +1,35 @@
 #!/bin/bash
+reserved_names=("select" "from" "where" "insert" "delete" "update" "table" "database")
 
+function validate_name()
+{
+  local name="$1"
+  local max_len=30
+
+  if (( ${#name} == 0 || ${#name} > max_len ))
+  then
+    echo "Name must be between 1 and $max_len characters.Try Again !"
+    return 1
+  fi
+
+  if [[ ! "$name" =~ ^[a-zA-Z][a-zA-Z0-9_]*$ ]]
+  then
+    echo "Name '$name' invalid. Must start with a letter and contain only letters, digits, or underscore.Try Again !"
+    return 1
+  fi
+
+  local lname="${name,,}"   # lowercase by new way
+  for kw in "${reserved_names[@]}"
+  do
+    if [[ "$lname" == "$kw" ]]
+    then
+      echo "'$name' is a reserved keyword.Try Again another not reserved !"
+      return 1
+    fi
+  done
+
+  return 0
+}
 
 width=$(tput cols)
 
@@ -22,7 +52,210 @@ then
 fi
 
 try=""
+function createTable
+{
+  clear
+  printseparator
+  printf "%*s%s\n" $((width / 2)) " Creation Tables to DB: $DB_NAME"
+  printseparator
 
+  while true
+  do
+    echo "$try"
+    try=""
+    read -p "Enter table name: " table_name
+    validate_name "$table_name" ||
+    {
+      read -p "Press Enter to retry..."
+      clear
+      continue
+    }
+
+    table_file="$DB_PATH/$table_name"
+    meta_file="$table_file.meta"
+
+    if [[ -f "$table_file" || -f "$meta_file" ]]
+    then
+      try="Table already exists! Please try again!"
+    else
+      break
+    fi
+  done
+
+  read -p "Enter number of columns: " col_count
+
+  metadata=""
+  pk_set="false"
+  declare -A col_names_seen
+
+  for ((i = 1; i <= col_count; i++))
+  do
+    while true
+    do
+      clear
+      echo "$try"
+      try=""
+      read -p "Enter name of column $i: " col_name
+      #col_name=$(echo "$col_name" | tr '[:upper:]' '[:lower:]')
+      validate_name "$col_name" ||
+      {
+        read -p "Press Enter to retry..."
+        clear
+        continue
+      }
+
+      if [[ -z "$col_name" ]]
+      then
+        try="Column name cannot be empty.TRY AGAIN!"
+        continue
+      elif [[ "${col_names_seen[$col_name]}" == "1" ]]
+      then
+        try="Duplicate column name '$col_name'. Please choose another!"
+        continue
+      #elif [[ " ${reserved_names[*]} " == *" $col_name "* ]]
+      #then
+        #echo "'$col_name' is a reserved SQL keyword. Please choose another."
+        #continue
+      else
+        col_names_seen[$col_name]=1
+        break
+      fi
+    done
+
+    while true
+    do
+      echo "$try"
+      try=""
+      read -p "Enter type of $col_name [int/string]: " col_type
+      col_type=$(echo "$col_type" | tr '[:upper:]' '[:lower:]')
+
+      if [[ "$col_type" == "int" || "$col_type" == "string" ]]
+      then
+        break
+      else
+        try="INVALID type. Please enter 'int' or 'string'."
+      fi
+    done
+
+    if [[ "$pk_set" == "false" ]]
+    then
+      while true
+      do
+        echo "$try"
+        try=""
+        read -p "Is $col_name a Primary Key? [yes/no]: " is_pk
+        is_pk=$(echo "$is_pk" | tr '[:upper:]' '[:lower:]' | )
+
+        if [[ "$is_pk" =~ ^y(e|es|s)?$ ]]
+        then
+          pk_set="true"
+          col_def="$col_name:$col_type:PK"
+          break
+        elif [[ "$is_pk" =~ ^n(o)?$ ]]
+        then
+          col_def="$col_name:$col_type"
+          break
+        else
+          try="Please answer 'yes' or 'no'. Try again!"
+        fi
+      done
+    else
+      col_def="$col_name:$col_type"
+    fi
+
+    if [[ $i -eq $col_count ]]
+    then
+      metadata+="$col_def"
+    else
+      metadata+="$col_def|"
+    fi
+  done
+
+  echo "$metadata" > "$meta_file"
+
+  touch "$table_file"
+
+  echo "Table '$table_name' created successfully."
+  echo "Metadata: $metadata"
+}
+
+function insertIntoTable
+{
+  clear
+  printseparator
+  printf "%*s%s\n" $((width / 2)) " Insert Into Tables of DB: $DB_NAME"
+  printseparator
+
+  read -p "Enter table name to insert into: " table_name
+  table_file="$DB_PATH/$table_name"
+  meta_file="$DB_PATH/$table_name.meta"
+
+  if [[ ! -f "$table_file" || ! -f "$meta_file" ]]
+  then
+    echo "Table '$table_name' does not exist."
+    return
+  fi
+
+  IFS='|' read -ra columns < "$meta_file"
+  row=""
+  pk_col_index=-1
+  pk_value=""
+
+  for idx in "${!columns[@]}"
+  do
+    IFS=':' read -r col_name col_type col_key <<< "${columns[$idx]}"
+
+    while true
+    do
+      read -p "Enter value for '$col_name' [$col_type]: " value
+
+      if [[ "$col_type" == "int" && ! "$value" =~ ^-?[0-9]+$ ]]
+      then
+        echo "'$col_name' must be an integer."
+        continue
+      elif [[ "$col_type" == "string" && "$value" =~ [|:] ]]
+      then
+        echo "Strings cannot contain '|' or ':'."
+        continue
+      fi
+      
+      if [[ "$col_key" == "PK" ]]
+      then
+        pk_value="$value"
+        pk_col_index=$idx
+
+        pk_exists=false
+
+        while IFS='|' read -ra fields
+        do
+          if [[ "${fields[$pk_col_index]}" == "$pk_value" ]]
+          then
+            pk_exists=true
+            break
+          fi
+        done < "$table_file"
+
+        if $pk_exists
+        then
+          echo "Primary Key value '$pk_value' already exists in column $(($pk_col_index+1))."
+          continue
+        fi
+      fi
+
+      break
+    done
+
+    if [[ $idx -eq 0 ]]
+    then
+      row="$value"
+    else
+      row+="|$value"
+    fi
+  done
+
+  echo "$row" >> "$table_file"
+  echo "Row inserted successfully: $row"
+}
 function listTables 
 {
   echo "Tables Available:"
@@ -186,8 +419,9 @@ function deleteRows
 
 }
 
-function deleteFromTable {
-clear
+function deleteFromTable
+{
+  clear
   printseparator
   printf "%*s%s\n" $((width / 2)) " Delete From Tables of DB: $DB_NAME"
   printseparator
@@ -219,7 +453,139 @@ clear
   esac
 
 }
+function updateTable
+{
+  clear
+  printseparator
+  printf "%*s%s\n" $((width / 2)) " Update Table in DB: $DB_NAME"
+  printseparator
 
+  read -p "Enter table name to update: " table_name
+  table_file="$DB_PATH/$table_name"
+  meta_file="$table_file.meta"
+
+  if [[ ! -f "$table_file" || ! -f "$meta_file" ]]
+  then
+    read -p "Enter column name to update: " col_to_update
+    echo "Table '$table_name' does not exist."
+    return
+  fi
+  
+  IFS='|' read -ra cols_meta < "$meta_file"
+  declare -a col_names col_types col_keys
+  pk_index=-1
+
+  for idx in "${!cols_meta[@]}"
+  do
+    IFS=':' read -r name type key <<< "${cols_meta[$idx]}"
+    col_names[$idx]="$name"
+    col_types[$idx]="$type"
+    col_keys[$idx]="$key"
+    [[ "$key" == "PK" ]] && pk_index=$idx
+  done
+
+  read -p "Enter primary key value to identify the row: " pk_value
+  declare -i line_num=0
+  target_line=""
+  while IFS= read -r line
+  do
+    ((line_num++))
+    IFS='|' read -ra fields <<< "$line"
+    if [[ "${fields[$pk_index]}" == "$pk_value" ]]
+    then
+      target_line=$line_num
+      break
+    fi
+  done < "$table_file"
+
+  if [[ $target_line -eq 0 ]]
+  then
+    echo "No record with PK='$pk_value' found."
+    return
+  fi
+
+  IFS='|' read -ra fields < <(sed -n "${target_line}p" "$table_file") #Process Substitution (Another subshell) ; like Pipline logic'|' in same shell but we can't use it
+  #IFS='|' read -ra fields <<< "$(sed -n "${target_line}p" "$table_file")" # Or Split in two line on script by take the output in a variable (subshell) and pass it to 'read Array Fields'(Main shell)
+
+  echo "Current record:"
+  for idx in "${!col_names[@]}"
+  do
+    echo "$((idx+1))). ${col_names[$idx]} = ${fields[$idx]}"
+  done
+
+  while true
+  do
+    read -p "Enter column name to update: " col_to_update
+    col_to_update=$(echo "$col_to_update" | tr '[:upper:]' '[:lower:]')
+    col_idx=-1
+    for i in "${!col_names[@]}"
+    do
+      [[ "${col_names[$i]}" == "$col_to_update" ]] && col_idx=$i && break
+    done
+    if [[ $col_idx -ge 0 ]]
+    then
+      break
+    else
+      echo "Invalid column name. Try again."
+      continue
+    fi
+  done
+
+  col_type="${col_types[$col_idx]}"
+  col_key="${col_keys[$col_idx]}"
+
+
+  while true
+  do
+    read -p "Enter new value for '$col_to_update' [$col_type]: " new_value
+
+    if [[ "$col_type" == "int" && ! "$new_value" =~ ^-?[0-9]+$ ]]
+    then
+      echo "Value must be an integer."
+      continue
+    elif [[ "$col_type" == "string" && "$new_value" =~ [\|\:] ]]
+    then
+      echo "Strings cannot contain '|' or ':'."
+      continue
+    fi
+
+    if [[ "$col_key" == "PK" ]]
+    then
+      pk_conflict=false
+      while IFS='|' read -ra row
+      do
+        [[ "${row[$col_idx]}" == "$new_value" ]] && pk_conflict=true && break
+      done < "$table_file"
+
+      if $pk_conflict
+      then
+        echo "Primary key '$new_value' already exists. Choose another."
+        continue
+      fi
+    fi
+
+    break
+  done
+
+  old_row=$(IFS='|'; echo "${fields[*]}")
+  fields[$col_idx]="$new_value"
+  new_row=$(IFS='|'; echo "${fields[*]}")
+  sed -i "${target_line}s/.*/$new_row/" "$table_file"
+  echo "The Row to update:"
+  echo "$old_row"
+  echo "Row updated successfully:"
+  echo "$new_row"
+
+  echo If you want another update ,Press 1
+  echo If you want Your database menu press Enter ..
+  read -p "Your choice >>" choice 
+  if [[ "$choice" == "1"  ]]
+  then
+    updateTable
+  else
+    continue
+  fi
+}
 while true
 do
   clear
@@ -246,7 +612,7 @@ do
     5) selectFromTable ;;
     6) deleteFromTable ;;
     7) updateTable ;;
-    8) ./menu;;
+    8) . ./menu;;
     *) echo "Invalid choice. Try again." ;;
   esac
 
