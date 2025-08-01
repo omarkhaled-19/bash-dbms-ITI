@@ -1,0 +1,170 @@
+#!/bin/bash
+
+db_path="./databaseSystem"
+if [[ -d $db_path ]]
+then
+	echo
+else
+	mkdir -p "$db_path"
+fi
+width=$(tput cols)
+function printseparator {
+    echo
+    printf '%*s\n' "$width" '' | tr ' ' '='
+    echo
+}
+reserved_names=("select" "from" "where" "insert" "delete" "update" "table" "database")
+
+function validate_name()
+{
+  local name="$1"
+  local max_len=30
+
+  if (( ${#name} == 0 || ${#name} > max_len ))
+  then
+    echo "Name must be between 1 and $max_len characters.Try Again !"
+    return 1
+  fi
+
+  if [[ ! "$name" =~ ^[a-zA-Z][a-zA-Z0-9_]*$ ]]
+  then
+    echo "Name '$name' invalid. Must start with a letter and contain only letters, digits, or underscore.Try Again !"
+    return 1
+  fi
+
+  local lname="${name,,}"   # lowercase by new way
+  for kw in "${reserved_names[@]}"
+  do
+    if [[ "$lname" == "$kw" ]]
+    then
+      echo "'$name' is a reserved keyword.Try Again another not reserved !"
+      return 1
+    fi
+  done
+
+  return 0
+}
+function mainMenu
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Welcome to Database Manegment System"
+    printseparator
+    echo "1) Create Database"
+    echo "2) List Databases"
+    echo "3) Connect to Database"
+    echo "4) Drop Database"
+    echo "5) Exit"
+
+    read -p "Choose an option: " choice
+
+    case $choice in
+        1)createdb ;;
+        2)listdbs ;;
+        3)connectdb ;;
+        4)dropdb ;;
+        5)exit ;;
+        *)echo "Invalid Option"; mainMenu ;;
+    esac
+    
+}
+try=""
+function createdb
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Create Your Database"
+    printseparator
+    echo $try
+    read -p "Enter database name:" dbname
+    validate_name "$dbname" ||
+    {
+        read -p "Press Enter to retry..."
+        clear
+        createdb
+    }
+    if [[ -d "$db_path/$dbname" ]]
+    then
+        try="Database '$dbname' already exists! TRY AGAIN"
+        createdb
+    else
+        mkdir "$db_path/$dbname"
+        echo "Database '$dbname' created SUCCEFULLY !"
+    fi
+    echo
+    read -p "Press Enter to return to menu....."
+    mainMenu
+}
+function listdbs
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "List The Databases"
+    printseparator
+    echo "Databases Available:"
+    if [[ $(ls -A $db_path) ]];
+    then
+    	ls $db_path
+    else
+     echo "No Databases created"
+    fi
+    echo 
+    read -p "Press Enter to return to menu....."
+    mainMenu
+}
+function dropdb
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Drop The Database"
+    printseparator
+    echo $try
+    echo "Databases Available:"
+    if [[ $(ls -A $db_path) ]];
+    then
+    	ls $db_path
+    else
+     	echo "No Databases created"
+     	echo
+    	read -p "Press Enter to return to menu....."
+    	mainMenu
+    fi
+    read -p "Enter Database name to delete: " dbname
+    if [[ -d "$db_path/$dbname"  && -n "$dbname" ]]
+    then
+        rm -r "$db_path/$dbname"
+        echo "Database '$dbname' deleted SUCCEFULLY !"
+    else
+        try="Database not found.Try Again,Please?!"
+        echo $try
+        dropdb
+    fi
+    try=''
+    echo
+    read -p "Press Enter to return to menu....."
+    mainMenu
+}
+function connectdb
+{
+    clear
+    printseparator
+    printf "%*s%s\n" $(( $width/2 )) "Connect The Database"
+    printseparator
+    echo $try
+    read -p "Enter Database name to connect: " dbname
+    if [[ -d "$db_path/$dbname" && -n "$dbname" ]]
+    then
+        #cd "$db_path/$dbname"
+        echo "Database '$dbname' connected SUCCEFULLY !"
+        . ./tableMenu "$db_path/$dbname"
+    else
+        try="Database not found.Try Again,Please?!"
+        connectdb
+    fi
+    echo
+    read -p "Press Enter to return to menu....."
+    mainMenu
+}
+
+#START
+mainMenu
